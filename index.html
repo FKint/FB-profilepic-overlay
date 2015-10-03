@@ -2,18 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pimp your Pic</title>
+    <title>Pimp your Pic - VTK</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon"/>
 </head>
 <body>
-
-<canvas id="pictureCanvas" width="500" height="400"></canvas>
-<br>
-<a id="downloadNewPic" class="btn btn-default" href="#">Download new picture</a>
-
+<div class="container">
+    <h1>Pimp your Facebook Profile Pic</h1>
+    <div class="row">
+        <div class="col-sm-4">
+            <ol>
+                <li><a id="loadFacebookPic" class="btn btn-default" href="#">Load</a> your Facebook Profile Picture so
+                    we can add an overlay.
+                </li>
+                <li><a id="downloadNewPic" class="btn btn-default" href="#">Download</a> the generated picture.</li>
+                <li>Set it as profile picture on Facebook to support VTK at the 24h run!</li>
+            </ol>
+        </div>
+        <div class="col-sm-8">
+            <canvas style="width:100%;" id="pictureCanvas" width="720" height="720"></canvas>
+        </div>
+    </div>
+</div>
 </body>
 <script>
     var ImageManager = function (canvas) {
@@ -25,17 +37,19 @@
         return this.canvas.toDataURL();
     };
     ImageManager.prototype.getCanvasWidth = function () {
-        return 200;
+        return this.getPicture() ? this.getPicture().width : 720;
     };
     ImageManager.prototype.getCanvasHeight = function () {
-        return 200;
+        return this.getPicture() ? this.getPicture().height : 720;
     };
     ImageManager.prototype.drawCanvas = function () {
-        this.context.clearRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
+        this.context.fillStyle = "#a0a0a0";
+        this.context.fillRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
         if (this.getPicture())
             this.context.drawImage(this.getPicture(), 0, 0, this.getCanvasWidth(), this.getCanvasHeight());
-        if (this.getOverlay())
+        if (this.getOverlay()) {
             this.context.drawImage(this.getOverlay(), 0, 0, this.getCanvasWidth(), this.getCanvasHeight());
+        }
     };
     ImageManager.prototype.getPicture = function () {
         return this.picture;
@@ -45,7 +59,7 @@
     };
     ImageManager.prototype.loadPicture = function () {
         var self = this;
-        FB.api('/me/picture?type=large', function (response) {
+        FB.api('/me/picture?width=720&height=720', function (response) {
             imageURL = response.data.url;
             self.setPictureURL(imageURL);
         });
@@ -55,6 +69,7 @@
         this.picture = new Image();
         this.picture.crossOrigin = "anonymous";
         this.picture.onload = function () {
+            console.log(self.picture.src);
             self.redraw();
         };
         this.picture.src = pictureURL;
@@ -80,8 +95,6 @@
             xfbml: true,
             version: 'v2.4'
         });
-
-        login();
     };
 
     (function (d, s, id) {
@@ -94,6 +107,7 @@
         js.src = "//connect.facebook.net/en_US/sdk.js";
         fjs.parentNode.insertBefore(js, fjs);
     }(document, 'script', 'facebook-jssdk'));
+
     var imageManager = new ImageManager($('#pictureCanvas')[0]);
     $(document).ready(function () {
         $('#downloadNewPic').click(function () {
@@ -102,19 +116,16 @@
                     .attr('download', 'vtk-profilepic.jpg');
 
         });
-        $('#pictureCanvas').resize(function(){
+        $('#pictureCanvas').resize(function () {
             imageManager.redraw();
+        });
+        $('#loadFacebookPic').click(function () {
+            login();
         });
     });
     function login() {
-        FB.getLoginStatus(function (response) {
-            if (response.status === 'connected') {
-                imageManager.loadPicture();
-            } else {
-                FB.login(function (response) {
-                    imageManager.loadPicture();
-                });
-            }
+        FB.login(function (response) {
+            imageManager.loadPicture();
         });
     }
 </script>
